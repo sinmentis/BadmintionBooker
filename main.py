@@ -1,21 +1,14 @@
-from dataclasses import dataclass
+from helper_classes import *
+
 from selenium import webdriver
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.chrome.options import Options as ChromeOptions
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
+from webdriver_manager.chrome import ChromeDriverManager
+
 import requests
 import time
 import json
-import datetime
-
-
-@dataclass
-class Config:
-    url_login: str
-    url_main: str
-    username: str
-    password: str
 
 
 def load_config(config_path="./config.json") -> Config:
@@ -25,8 +18,15 @@ def load_config(config_path="./config.json") -> Config:
     url_main = data.get("url_main")
     username = data.get("username")
     password = data.get("password")
-
-    return Config(url_login, url_main, username, password)
+    preference_list = []
+    for preference in data.get("preference"):
+        week = int(preference.get("week"))
+        duration_min = int(preference.get("duration_min"))
+        start_time = int(preference.get("start_time"))
+        court = int(preference.get("court"))
+        priority = int(preference.get("priority"))
+        preference_list.append(Preference(week, duration_min, start_time, court, priority))
+    return Config(url_login, url_main, username, password, preference_list)
 
 
 def login(config: Config) -> tuple:
@@ -64,7 +64,7 @@ def login(config: Config) -> tuple:
     return browser, session
 
 
-def parse_time(browser):
+def parse_available_date(browser):
     available_time = []
 
     # Drop down list
@@ -77,26 +77,43 @@ def parse_time(browser):
 
 
 def parse_court_table(browser):
-    # xpath for table header <tr>
+    # Getting table header
     header_column_xpath = '//*[@id="grid_box"]/div[1]/table/tbody/tr[2]'
     header_column = browser.find_elements(By.XPATH, header_column_xpath)[0]
     header_column_element_list = header_column.find_elements(By.XPATH, 'td')
     header_column_text_list = []
-    for index in range(0, len(header_column_element_list)):
-        final_xpath = f"{header_column_xpath}/td[{index + 1}]/div"
-        cell_text = browser.find_elements(By.XPATH, final_xpath)[0].text
+    for element in header_column_element_list:
+        cell_text = element.find_elements(By.XPATH, 'div')[0].text
         header_column_text_list.append(cell_text)
+
+    # Getting timetable content
+    timetable_content_xpath = '//*[@id="grid_box"]/div[2]/table/tbody'
+    timetable_content = browser.find_elements(By.XPATH, timetable_content_xpath)[0]
+    timetable_content_row_list = timetable_content.find_elements(By.XPATH, 'tr')
+    time_index = 1  # const int
+
+    # Skip the first line for style setting :)
+    for element in timetable_content_row_list[time_index:]:
+        row_list = element.find_elements(By.XPATH, 'td')
+        time_str = ""
+        for index, row in enumerate(row_list):
+            style = row.get_attribute("style")
+            # Assume time element doesn't have background-color
+            if "background-color" in style:
+                if any(value in style for value in TimeSlotStatus.Available.value):
+                    print(f"{time_str} is available for {header_column_text_list[index]}")
+            else:
+                time_str = row.text
 
 
 def main():
     config = load_config()
     browser, session = login(config)
-    available_time = parse_time(browser)
+    available_dates = parse_available_date(browser)
     parse_court_table(browser)
+
     # TODO:
-    # Get available dates
-    # Generate time table of that date
-    # Make a booking
+    # Make a booking '/html/body/form/div/div/div/div[3]/div[2]/button' '//*[@id="modal_next"]
     # Balances check
     # etc.
     browser.close()

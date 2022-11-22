@@ -1,6 +1,22 @@
 {
-  "url_login": "https://internetbookings.net.nz/",
-  "url_main": "https://internetbookings.net.nz/smii/main",
-  "username": "",
-  "password": ""
+    "url_login": "https://internetbookings.net.nz/",
+    "url_main": "https://internetbookings.net.nz/smii/main",
+    "username": "",
+    "password": "",
+    "preference": [
+        {
+            "week": 6,
+            "duration_min": 120,
+            "start_time": 10,
+            "court": 0,
+            "priority": 0
+        },
+        {
+            "week": 7,
+            "duration_min": 120,
+            "start_time": 10,
+            "court": 0,
+            "priority": 0
+        }
+    ]
 }
