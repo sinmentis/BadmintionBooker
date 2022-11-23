@@ -18,15 +18,15 @@ def load_config(config_path="./config.json") -> Config:
     url_main = data.get("url_main")
     username = data.get("username")
     password = data.get("password")
-    preference_list = []
+    preferences_list = []
     for preference in data.get("preference"):
         week = int(preference.get("week"))
         duration_min = int(preference.get("duration_min"))
         start_time = int(preference.get("start_time"))
         court = int(preference.get("court"))
         priority = int(preference.get("priority"))
-        preference_list.append(Preference(week, duration_min, start_time, court, priority))
-    return Config(url_login, url_main, username, password, preference_list)
+        preferences_list.append(Preference(week, duration_min, start_time, court, priority))
+    return Config(url_login, url_main, username, password, preferences_list)
 
 
 def login(config: Config) -> tuple:
@@ -111,8 +111,10 @@ def main():
     browser, session = login(config)
     available_dates = parse_available_date(browser)
     parse_court_table(browser)
-
     # TODO:
+    # Navigate to that date
+    # Parse the timetable
+    # Match timetable with preference
     # Make a booking '/html/body/form/div/div/div/div[3]/div[2]/button' '//*[@id="modal_next"]
     # Balances check
     # etc.
