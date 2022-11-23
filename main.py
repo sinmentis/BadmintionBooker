@@ -68,7 +68,8 @@ def parse_available_date(browser):
     available_time = []
 
     # Drop down list
-    date_form = Select(browser.find_element(By.NAME, value="date"))
+    date_drop_down_xpath = '//*[@id="date_nav"]/select'
+    date_form = Select(browser.find_element(By.XPATH, date_drop_down_xpath))
     for element in date_form.options:
         year, month, day = element.get_attribute("value").split()
         available_time.append(datetime.datetime(int(year), int(month), int(day)))
@@ -79,16 +80,16 @@ def parse_available_date(browser):
 def parse_court_table(browser):
     # Getting table header
     header_column_xpath = '//*[@id="grid_box"]/div[1]/table/tbody/tr[2]'
-    header_column = browser.find_elements(By.XPATH, header_column_xpath)[0]
+    header_column = browser.find_element(By.XPATH, header_column_xpath)
     header_column_element_list = header_column.find_elements(By.XPATH, 'td')
     header_column_text_list = []
     for element in header_column_element_list:
-        cell_text = element.find_elements(By.XPATH, 'div')[0].text
+        cell_text = element.find_element(By.XPATH, 'div').text
         header_column_text_list.append(cell_text)
 
     # Getting timetable content
     timetable_content_xpath = '//*[@id="grid_box"]/div[2]/table/tbody'
-    timetable_content = browser.find_elements(By.XPATH, timetable_content_xpath)[0]
+    timetable_content = browser.find_element(By.XPATH, timetable_content_xpath)
     timetable_content_row_list = timetable_content.find_elements(By.XPATH, 'tr')
     time_index = 1  # const int
 
@@ -106,18 +107,33 @@ def parse_court_table(browser):
                 time_str = row.text
 
 
+def navigate_to_date(browser, dropdown_index: int):
+    date_drop_down_xpath = '//*[@id="date_nav"]/select'
+    date_drop_down = Select(browser.find_element(By.XPATH, date_drop_down_xpath))
+    date_drop_down.select_by_index(dropdown_index)
+    browser.implicitly_wait(3)
+
+
+def perform_booking_by_preferences(browser, config: Config):
+    available_dates = parse_available_date(browser)
+    for _, preferences in config.prioritized_preferences.items():
+        for preference in preferences:
+            for dropdown_index, date in enumerate(available_dates):
+                week_index = preference.week - 1  # start with monday = 0
+                if week_index == date.weekday():
+                    navigate_to_date(browser, dropdown_index)
+                    parse_court_table(browser)
+                    # TODO:
+                    # Match timetable with preference
+                    # Make a booking '/html/body/form/div/div/div/div[3]/div[2]/button' '//*[@id="modal_next"]
+                    # Balances check
+                    # etc.
+
+
 def main():
     config = load_config()
     browser, session = login(config)
-    available_dates = parse_available_date(browser)
-    parse_court_table(browser)
-    # TODO:
-    # Navigate to that date
-    # Parse the timetable
-    # Match timetable with preference
-    # Make a booking '/html/body/form/div/div/div/div[3]/div[2]/button' '//*[@id="modal_next"]
-    # Balances check
-    # etc.
+    perform_booking_by_preferences(browser, config)
     browser.close()
 
 
