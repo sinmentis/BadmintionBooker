@@ -38,6 +38,7 @@ def login(config: Config) -> tuple:
 
     # Lunch a Chrome
     browser = webdriver.Chrome(ChromeDriverManager().install(), chrome_options=options)
+    browser.implicitly_wait(15)
     browser.get(config.url_login)
 
     # Fill in username/password, login
@@ -111,7 +112,8 @@ def navigate_to_date(browser, dropdown_index: int):
     date_drop_down_xpath = '//*[@id="date_nav"]/select'
     date_drop_down = Select(browser.find_element(By.XPATH, date_drop_down_xpath))
     date_drop_down.select_by_index(dropdown_index)
-    browser.implicitly_wait(3)
+    time.sleep(1)  # FIXME: Ugly ass code alert! Can be replaced by "Explicit Waits"
+
 
 
 def perform_booking_by_preferences(browser, config: Config):
