@@ -10,6 +10,8 @@ import requests
 import time
 import json
 
+WEEK_TO_STR = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+
 
 def load_config(config_path="./config.json") -> Config:
     with open(config_path, "r") as file:
@@ -79,6 +81,8 @@ def parse_available_date(browser):
 
 
 def parse_court_table(browser):
+    print("Start parsing table")
+
     # Getting table header
     header_column_xpath = '//*[@id="grid_box"]/div[1]/table/tbody/tr[2]'
     header_column = browser.find_element(By.XPATH, header_column_xpath)
@@ -99,7 +103,7 @@ def parse_court_table(browser):
         row_list = element.find_elements(By.XPATH, 'td')
         time_str = ""
         for index, row in enumerate(row_list):
-            style = row.get_attribute("style")
+            style = row.get_attribute("style").lower()
             # Assume time element doesn't have background-color
             if "background-color" in style:
                 if any(value in style for value in TimeSlotStatus.Available.value):
@@ -111,17 +115,25 @@ def parse_court_table(browser):
 def navigate_to_date(browser, dropdown_index: int):
     date_drop_down_xpath = '//*[@id="date_nav"]/select'
     date_drop_down = Select(browser.find_element(By.XPATH, date_drop_down_xpath))
+    available_dates = parse_available_date(browser)
+    print(f'Jumping to page [{available_dates[dropdown_index].strftime("%Y/%m/%d - %A")}]...')
     date_drop_down.select_by_index(dropdown_index)
+
+    # Wait for page to load or error: element is not attached to the page document
+    print("Reloading...")
     time.sleep(1)  # FIXME: Ugly ass code alert! Can be replaced by "Explicit Waits"
 
+    date_drop_down = Select(browser.find_element(By.XPATH, date_drop_down_xpath))
+    print(f"Currently at {date_drop_down.first_selected_option.get_attribute('value')}")
 
 
 def perform_booking_by_preferences(browser, config: Config):
     available_dates = parse_available_date(browser)
     for _, preferences in config.prioritized_preferences.items():
         for preference in preferences:
+            week_index = preference.week - 1  # start with monday = 0
+            print(f"Priority: {preference.priority} - Looking for {WEEK_TO_STR[week_index]}")
             for dropdown_index, date in enumerate(available_dates):
-                week_index = preference.week - 1  # start with monday = 0
                 if week_index == date.weekday():
                     navigate_to_date(browser, dropdown_index)
                     parse_court_table(browser)
