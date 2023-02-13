@@ -5,14 +5,14 @@
     "password": "",
     "preference": [
         {
-            "week": 6,
+            "week": "Saturday",
             "duration_min": 120,
             "start_time": 10,
             "court": 0,
             "priority": 0
         },
         {
-            "week": 7,
+            "week": "Sunday",
             "duration_min": 120,
             "start_time": 10,
             "court": 0,

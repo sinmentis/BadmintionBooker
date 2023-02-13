@@ -35,16 +35,15 @@ class Config:
     url_main: str
     username: str
     password: str
-    preferences: list
+    _preferences: list
 
     # {int(priority): [Preference, Preference]}
     prioritized_preferences: dict = field(default_factory=dict)
 
     def __post_init__(self):
         # Prioritize preferences, generate prioritized_preferences
-        for preference in self.preferences:
+        for preference in self._preferences:
             if preference.priority in self.prioritized_preferences.keys():
                 self.prioritized_preferences[preference.priority].append(preference)
             else:
                 self.prioritized_preferences[preference.priority] = [preference]
-        self.prioritized_preferences = dict(sorted(self.prioritized_preferences.items()))
